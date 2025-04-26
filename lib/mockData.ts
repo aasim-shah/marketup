@@ -16,6 +16,7 @@ export const mockSearchResults = (
         socialLinks: {
           facebook: "https://www.facebook.com/SdhPak",
         },
+        selected: false,
       },
       {
         name: "Techozon SMC PVT LTD",
@@ -29,6 +30,7 @@ export const mockSearchResults = (
           linkedin: "https://www.linkedin.com/company/techozon-software-house/",
           others: ["https://twitter.com/Techozon1"],
         },
+        selected: false,
       },
       {
         name: "APPINSNAP (PRIVATE) LIMITED",
@@ -42,6 +44,7 @@ export const mockSearchResults = (
           linkedin: "https://www.linkedin.com/company/appinsnap/",
           others: ["https://twitter.com/appinsnap_"],
         },
+        selected: false,
       },
     ],
   };

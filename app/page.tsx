@@ -61,9 +61,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col  bg-background">
-      <header className="bg-card shadow-sm py-4 px-4 md:px-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Place Finder</h1>
+      <header className="bg-card shadow-sm py-4 px-4 ">
+        <div className="flex items-center md:w-11/12 mx-auto justify-between">
+          <h1 className="text-2xl font-bold">MarketUP</h1>
           <ThemeToggle />
         </div>
       </header>
@@ -73,9 +73,21 @@ export default function Home() {
           <div className="p-4">
             <SearchBar onSearch={handleSearch} isLoading={isLoading} />
           </div>
-          {searchResults && (
+          {searchResults ? (
             <div className="flex-1 relative h-[calc(100vh-200px)]">
               <MapSection searchResults={searchResults} />
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-4">
+              <div className="text-center max-w-md p-8">
+                <h2 className="text-xl font-semibold mb-2">
+                  Start Your Search
+                </h2>
+                <p className="text-muted-foreground mb-4">
+                  Enter a search query (e.g., &quot;software house&quot;) and
+                  location (e.g., &quot;Gulberg Green&quot;) to find places.
+                </p>
+              </div>
             </div>
           )}
           {/* <div className="p-4">

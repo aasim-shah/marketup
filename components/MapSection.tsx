@@ -41,6 +41,10 @@ import {
   Youtube,
   Bot,
   Brain,
+  ChevronRight,
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import axios from "axios";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -62,6 +66,7 @@ export default function MapSection({ searchResults }: MapSectionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [shouldRecenter, setShouldRecenter] = useState(true);
+  const [isListCollapsed, setIsListCollapsed] = useState(false);
   const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral | null>(
     null
   );
@@ -71,7 +76,6 @@ export default function MapSection({ searchResults }: MapSectionProps) {
     subject: "",
     resume: null as File | null,
   });
-  const [isBrainLoading, setIsBrainLoading] = useState(false);
   const apiKey =
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
     "AIzaSyBECY2aNK5YkXshm_ZEqtZY0M_hcJT65Iw";
@@ -143,7 +147,6 @@ export default function MapSection({ searchResults }: MapSectionProps) {
 
   const handleBrainClick = async () => {
     try {
-      setIsBrainLoading(true);
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASE_URL}/generate-text`,
         {
@@ -167,8 +170,6 @@ export default function MapSection({ searchResults }: MapSectionProps) {
       }
     } catch (error) {
       console.error("Error sending brain request:", error);
-    } finally {
-      setIsBrainLoading(false);
     }
   };
 
@@ -280,32 +281,67 @@ export default function MapSection({ searchResults }: MapSectionProps) {
   ];
 
   return (
-    <div className="w-full h-[82vh] relative flex">
-      <div className="w-1/4 h-full overflow-y-auto p-4 border-r">
-        <h3 className="text-lg font-semibold mb-4">Selected Locations</h3>
-        <div className="space-y-2">
-          {selectedMarkers.map((marker) => (
+    <div className="w-full h-[80vh] relative flex flex-col md:flex-row">
+      <div
+        className={`relative w-full md:w-1/4  md:h-full overflow-y-auto  border-b md:border-r bg-card transition-all duration-300 ${
+          isListCollapsed
+            ? "w-0 md:w-0 overflow-hidden p-0 border-0 opacity-0"
+            : "opacity-100 p-4"
+        }`}
+      >
+        <div className="bg-card pb-4 flex justify-between items-center">
+          <h3 className="text-lg font-semibold whitespace-nowrap">
+            Locations ({locations.length})
+          </h3>
+        </div>
+        <div className={`space-y-2 mt-2 ${isListCollapsed ? "hidden" : ""}`}>
+          {locations.map((location) => (
             <div
-              key={marker.name}
-              className="flex items-center space-x-2 p-2 hover:bg-muted rounded-lg cursor-pointer"
-              onClick={() => handleMarkerClick(marker)}
+              key={location.name}
+              className={`flex items-center space-x-2 p-3 rounded-lg cursor-pointer transition-colors ${
+                selectedMarkers.some((marker) => marker.name === location.name)
+                  ? "bg-primary/10 border border-primary/20"
+                  : "hover:bg-muted"
+              }`}
+              onClick={() => handleMarkerClick(location)}
             >
               <Checkbox
-                checked={true}
-                onCheckedChange={() => toggleSelection(marker)}
+                checked={selectedMarkers.some(
+                  (marker) => marker.name === location.name
+                )}
+                onCheckedChange={() => toggleSelection(location)}
+                className="h-4 w-4"
               />
-              <span className="text-sm">{marker.name}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{location.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {location.address}
+                </p>
+              </div>
             </div>
           ))}
-          {selectedMarkers.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No locations selected
-            </p>
-          )}
         </div>
       </div>
 
-      <div className="w-3/4 h-full">
+      <div
+        className={`relative w-full h-[52vh] md:h-full transition-all duration-300 ${
+          isListCollapsed ? "w-full h-[100vh]" : "w-full md:w-3/4"
+        }`}
+      >
+        <Button
+          variant="default"
+          size="icon"
+          className={`absolute bg-primary text-primary-foreground top-4 ${
+            isListCollapsed ? "left-4" : "left-4 md:left-4"
+          } z-10  backdrop-blur-sm`}
+          onClick={() => setIsListCollapsed(!isListCollapsed)}
+        >
+          {isListCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </Button>
         <LoadScript googleMapsApiKey={apiKey}>
           <GoogleMap
             mapContainerStyle={{ width: "100%", height: "100%" }}
@@ -445,7 +481,7 @@ export default function MapSection({ searchResults }: MapSectionProps) {
         </LoadScript>
 
         {/* Proceed Button */}
-        <div className="mt-4 ml-auto w-fit absolute bottom-0 right-0">
+        <div className="mt-4 ml-auto w-fit absolute bottom-4 right-4">
           <Button
             variant="default"
             className="w-fit bg-primary text-primary-foreground hover:bg-primary/80"
@@ -491,15 +527,10 @@ export default function MapSection({ searchResults }: MapSectionProps) {
               <TiptapEditor editor={editor} />
               <Button
                 variant="outline"
-                className="absolute right-8 bottom-10 rounded-full h-12 w-12 p-2 bg-primary"
+                className="absolute right-8 bottom-10 rounded-full h-12 w-12 p-2  bg-primary"
                 onClick={handleBrainClick}
-                disabled={isBrainLoading}
               >
-                {isBrainLoading ? (
-                  <div className="animate-spin h-6 w-6 border-2 border-primary-foreground border-t-transparent rounded-full" />
-                ) : (
-                  <Brain className="w-full h-full text-primary-foreground" />
-                )}
+                <Brain className="w-full h-full text-primary-foreground" />
               </Button>
             </div>
 
