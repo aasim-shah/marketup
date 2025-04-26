@@ -52,6 +52,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { TiptapEditor } from "@/components/ui/tiptap-editor";
 import { useTheme } from "next-themes";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/use-toast";
 
 interface MapSectionProps {
   searchResults: {
@@ -67,6 +68,7 @@ export default function MapSection({ searchResults }: MapSectionProps) {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [shouldRecenter, setShouldRecenter] = useState(true);
   const [isListCollapsed, setIsListCollapsed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral | null>(
     null
   );
@@ -82,6 +84,7 @@ export default function MapSection({ searchResults }: MapSectionProps) {
 
   const locations = searchResults.results;
   const mapRef = useRef<google.maps.Map | null>(null);
+  const { toast } = useToast();
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -108,7 +111,11 @@ export default function MapSection({ searchResults }: MapSectionProps) {
   };
 
   const handleProceed = () => {
-    setIsDialogOpen(true);
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsDialogOpen(true);
+      setIsLoading(false);
+    }, 500); // Small delay to show loading state
   };
 
   const handleFormSubmit = async () => {
@@ -133,15 +140,22 @@ export default function MapSection({ searchResults }: MapSectionProps) {
       );
 
       if (response.status === 200) {
-        // alert("Application submitted successfully!");
-        // setIsDialogOpen(false);
-        // setFormData({ fullName: "", message: "", resume: null });
+        toast({
+          title: "Success",
+          description: "Application submitted successfully!",
+        });
+        setIsDialogOpen(false);
+        setFormData({ fullName: "", email: "", subject: "", resume: null });
       } else {
         throw new Error("Failed to submit application");
       }
     } catch (error) {
       console.error("Error submitting application:", error);
-      alert("Error submitting application");
+      toast({
+        title: "Error",
+        description: "Failed to submit application. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -283,16 +297,31 @@ export default function MapSection({ searchResults }: MapSectionProps) {
   return (
     <div className="w-full h-[80vh] relative flex flex-col md:flex-row">
       <div
-        className={`relative w-full md:w-1/4  md:h-full overflow-y-auto  border-b md:border-r bg-card transition-all duration-300 ${
+        className={`relative w-full   md:h-full overflow-y-auto  border-b md:border-r bg-card transition-all duration-300 ${
           isListCollapsed
             ? "w-0 md:w-0 overflow-hidden p-0 border-0 opacity-0"
-            : "opacity-100 p-4"
+            : "opacity-100 p-4 md:w-1/4"
         }`}
       >
         <div className="bg-card pb-4 flex justify-between items-center">
           <h3 className="text-lg font-semibold whitespace-nowrap">
             Locations ({locations.length})
           </h3>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (selectedMarkers.length === locations.length) {
+                setSelectedMarkers([]);
+              } else {
+                setSelectedMarkers([...locations]);
+              }
+            }}
+          >
+            {selectedMarkers.length === locations.length
+              ? "Deselect All"
+              : "Select All"}
+          </Button>
         </div>
         <div className={`space-y-2 mt-2 ${isListCollapsed ? "hidden" : ""}`}>
           {locations.map((location) => (
@@ -320,6 +349,23 @@ export default function MapSection({ searchResults }: MapSectionProps) {
               </div>
             </div>
           ))}
+        </div>
+        <div className="mt-4">
+          <Button
+            variant="default"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/80"
+            onClick={handleProceed}
+            disabled={selectedMarkers.length === 0 || isLoading}
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                <span>Processing...</span>
+              </div>
+            ) : (
+              `Proceed with Selected (${selectedMarkers.length})`
+            )}
+          </Button>
         </div>
       </div>
 
@@ -479,18 +525,6 @@ export default function MapSection({ searchResults }: MapSectionProps) {
             )}
           </GoogleMap>
         </LoadScript>
-
-        {/* Proceed Button */}
-        <div className="mt-4 ml-auto w-fit absolute bottom-4 right-4">
-          <Button
-            variant="default"
-            className="w-fit bg-primary text-primary-foreground hover:bg-primary/80"
-            onClick={handleProceed}
-            disabled={selectedMarkers.length === 0}
-          >
-            Proceed with Selected ({selectedMarkers.length})
-          </Button>
-        </div>
       </div>
 
       {/* Application Dialog */}
